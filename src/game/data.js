@@ -9,7 +9,7 @@ export const PUZZLES = {
   "water-gates": { region:"water", glyph:0, kicker:"水利面 · 闸渠网", title:"二十五闸成网", copy:"转动每块木闸，让中央水源抵达全部二十五格。每一个渠口都必须与相邻渠口互接，不能冲向边界，也不能留下孤立水段。", type:"pipes" },
   "water-crossing": { region:"water", glyph:1, kicker:"水利面 · 洲岛", title:"十五岛连桥", copy:"岛上大字是它需要连接的桥数。让同一横列或竖列、且中间没有其他岛的两座岛相连；每段可为零、一或两座桥。数字吻合、桥不相交且十五岛全连通时，南桥才会落下。", type:"bridge" },
   "grain-weather": { region:"grain", glyph:2, kicker:"稻作面 · 雨线", title:"雨前八刻", copy:"八道工序被风吹乱了。利用先后、紧邻与固定间距线索，把收割、脱粒、扬场、晒谷、装篓、水运和入仓排进唯一次序。", type:"timeline" },
-  "grain-ferry": { region:"grain", glyph:3, kicker:"稻作面 · 四水道", title:"一潮四舟", copy:"二十格物资要在同一潮次离岸。四条船载重相同，答案不藏在容量顺序里：只有读懂水道、货性、同舟与避让关系，才能把船分对。", type:"cargo" },
+  "grain-ferry": { region:"grain", glyph:3, kicker:"稻作面 · 四水道", title:"一潮四舟", copy:"二十格物资要在同一潮次离岸。舱位只是上限，船可留空；读懂水道、货性、同舟与避让关系，才能推演出唯一的调度。", type:"cargo" },
   "jade-light": { region:"jade", glyph:4, kicker:"制玉面 · 看料", title:"玉料灯阵", copy:"在玉料空格点灯，让全部玉面受光。两盏灯不能彼此照见；刻有数字的深色玉料四周，必须恰有相应数量的灯。", type:"light" },
   "jade-drill": { region:"jade", glyph:5, kicker:"制玉面 · 对钻", title:"三芯校孔", copy:"三枚钻芯卡在断面里。每次只能从背后推动，不能回拉；把它们分别推入发光孔位，为玉琮的三条对钻孔道校正轴线。", type:"drill" },
   "ritual-map": { region:"ritual", glyph:6, kicker:"城台面 · 探方", title:"夯土边界", copy:"一百个探方只留下每行、每列的连续土色记录。按数字标出夯土；不同数字之间必须至少隔一个空格。", type:"map" },
