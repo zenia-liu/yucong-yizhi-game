@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#13211f">
+  <meta name="description" content="《器中城：玉琮王》——进入一件文物内部的3D箱庭探险解谜游戏。">
+  <title>器中城：玉琮王</title>
+</head>
+<body>
+<div id="app">
+  <canvas id="world" tabindex="0" aria-label="《器中城：玉琮王》游戏画面"></canvas>
+  <div id="surface-light" aria-hidden="true"></div>
+  <header id="hud" class="is-hidden">
+    <div class="hud-title">
+      <span class="eyebrow">器中城</span>
+      <strong id="region-name">玉琮王</strong>
+    </div>
+    <div id="glyphs" aria-label="八幅纹样复原进度"></div>
+    <button id="sound-toggle" class="icon-button" type="button" aria-label="关闭声音">声</button>
+  </header>
+
+  <section id="title-screen" class="screen active" aria-labelledby="game-title">
+    <div class="title-mark" aria-hidden="true">
+      <span></span><span></span><span></span><span></span>
+    </div>
+    <p class="eyebrow">微缩考古 · 空间解谜</p>
+    <h1 id="game-title">器中城<span>玉琮王</span></h1>
+    <p class="title-copy">读懂玉琮王四面八幅神人兽面纹，展开器内的水利、稻作、制玉与城台。道路和谜题是同一件事。</p>
+    <button id="start-game" class="primary-button" type="button">开始观察</button>
+    <button id="continue-game" class="text-button is-hidden" type="button">继续上次旅程</button>
+    <p class="control-hint">拖动器物 · 点击道路寻路 · WASD / 方向键移动</p>
+  </section>
+
+  <section id="dialogue" class="dialogue is-hidden" aria-live="polite">
+    <p id="dialogue-speaker"></p>
+    <div id="dialogue-text"></div>
+    <button id="dialogue-next" type="button">继续</button>
+  </section>
+
+  <section id="objective" class="objective is-hidden" aria-live="polite">
+    <span>此刻</span><p id="objective-text"></p>
+  </section>
+
+  <section id="interaction" class="interaction is-hidden" aria-live="polite">
+    <p id="interaction-label"></p>
+    <button id="interaction-action" class="primary-button" type="button">查看</button>
+  </section>
+
+  <section id="puzzle-panel" class="puzzle-panel is-hidden" aria-modal="true" role="dialog">
+    <button id="puzzle-close" class="close-button" type="button" aria-label="关闭谜题">×</button>
+    <p id="puzzle-kicker" class="eyebrow"></p>
+    <h2 id="puzzle-title"></h2>
+    <p id="puzzle-copy"></p>
+    <div id="puzzle-content"></div>
+    <p id="puzzle-feedback" aria-live="polite"></p>
+  </section>
+
+  <section id="chapter-card" class="chapter-card is-hidden" aria-live="polite">
+    <p id="chapter-number" class="eyebrow"></p>
+    <h2 id="chapter-title"></h2>
+    <p id="chapter-subtitle"></p>
+  </section>
+
+  <section id="ending" class="screen is-hidden" aria-labelledby="ending-title">
+    <p class="eyebrow">四面 · 八纹 · 一城</p>
+    <h2 id="ending-title">证据重新相连</h2>
+    <p>你没有替过去编一个结局。你通过地形、工艺与位置，让证据之间的关系重新可见。</p>
+    <blockquote>器物不是故事的插图；器物本身就是一套等待被读懂的结构。</blockquote>
+    <button id="restart-game" class="primary-button" type="button">再次进入</button>
+  </section>
+
+  <div id="toast" class="toast is-hidden" aria-live="polite"></div>
+</div>
+<script type="module" src="/src/main.js"></script>
+</body>
+</html>
+
