@@ -22,6 +22,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Use workflow output as the Pages source
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api --method PUT "repos/${GITHUB_REPOSITORY}/pages" -f build_type=workflow || \
+          gh api --method POST "repos/${GITHUB_REPOSITORY}/pages" -f build_type=workflow
       - uses: actions/setup-node@v4
         with:
           node-version: 20
