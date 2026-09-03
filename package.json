@@ -1,0 +1,19 @@
+{
+  "name": "city-within-cong",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "vite --host 127.0.0.1",
+    "dev": "vite --host 127.0.0.1",
+    "build": "vite build",
+    "verify:puzzles": "node scripts/verify-puzzles.mjs",
+    "preview": "vite preview --host 127.0.0.1"
+  },
+  "dependencies": {
+    "three": "^0.180.0"
+  },
+  "devDependencies": {
+    "vite": "^7.1.4"
+  }
+}
