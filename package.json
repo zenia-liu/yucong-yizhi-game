@@ -8,6 +8,7 @@
     "dev": "vite --host 127.0.0.1",
     "build": "vite build",
     "verify:puzzles": "node scripts/verify-puzzles.mjs",
+    "verify:content": "node scripts/verify-content.mjs",
     "preview": "vite preview --host 127.0.0.1"
   },
   "dependencies": {

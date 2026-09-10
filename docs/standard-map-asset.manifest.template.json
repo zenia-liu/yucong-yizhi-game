@@ -1,0 +1,8 @@
+{
+  "source_url": "https://bzdt.tianditu.gov.cn/",
+  "catalog_hint": "中国地图 1:4800万 64开 分省设色 有邻国 线划二",
+  "approval_no": "填写所下载具体底图的审图号",
+  "asset_path": "public/maps/official-china-map.jpg",
+  "asset_sha256": "填写原始未编辑底图的 SHA-256",
+  "review_record": "填写放大、裁切、叠加文物标记后的公开使用审核记录"
+}

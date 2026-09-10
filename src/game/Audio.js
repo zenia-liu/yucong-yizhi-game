@@ -4,6 +4,7 @@ export class AudioSystem {
     this.master = null;
     this.enabled = true;
     this.ambientNodes = [];
+    this.ambientTimers = [];
   }
 
   ensure() {
@@ -73,6 +74,32 @@ export class AudioSystem {
     this.ambientNodes.push(src, gain);
   }
 
+  settlement() {
+    // Keep the soundscape sparse: low water is continuous, while birds and fire
+    // arrive irregularly so the world feels inhabited rather than looped music.
+    this.water();
+    const bird = () => {
+      if (!this.enabled || !this.ctx) return;
+      const base = 1040 + Math.random() * 170;
+      this.tone(base, .1, "sine", .045);
+      this.tone(base * 1.23, .14, "sine", .026, .11);
+      this.ambientTimers.push(setTimeout(bird, 7000 + Math.random() * 9000));
+    };
+    const crackle = () => {
+      if (!this.enabled || !this.ctx) return;
+      const duration = .055;
+      const buffer = this.ctx.createBuffer(1, Math.floor(this.ctx.sampleRate * duration), this.ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < data.length; i += 1) data[i] = (Math.random() * 2 - 1) * (1 - i / data.length);
+      const src = this.ctx.createBufferSource(), filter = this.ctx.createBiquadFilter(), gain = this.ctx.createGain();
+      src.buffer = buffer; filter.type = "bandpass"; filter.frequency.value = 1350; gain.gain.value = .026;
+      src.connect(filter).connect(gain).connect(this.master);src.start();
+      this.ambientTimers.push(setTimeout(crackle, 3000 + Math.random() * 5200));
+    };
+    this.ambientTimers.push(setTimeout(bird, 1200 + Math.random() * 2200));
+    this.ambientTimers.push(setTimeout(crackle, 1700 + Math.random() * 1800));
+  }
+
   drone(region = 0) {
     if (!this.enabled) return;
     this.ensure();
@@ -91,6 +118,8 @@ export class AudioSystem {
   }
 
   stopAmbient() {
+    for (const timer of this.ambientTimers) clearTimeout(timer);
+    this.ambientTimers = [];
     for (const node of this.ambientNodes) {
       try { if (node.stop) node.stop(); } catch (_) { /* already stopped */ }
       try { node.disconnect(); } catch (_) { /* already disconnected */ }

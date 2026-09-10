@@ -1,328 +1,72 @@
-import { AudioSystem } from "./Audio.js";
-import { PuzzleSystem } from "./Puzzles.js";
 import { World } from "./World.js";
-import { INTRO_LINES, PUZZLES, REGIONS, REGION_COMPLETE_LINES } from "./data.js";
+import { QUESTS, SIDE_STORIES, TASKS } from "./data.js";
+import { AudioSystem } from "./Audio.js";
+import { STANDARD_MAP, hasPublishableStandardMap } from "./mapPolicy.js";
 
-const SAVE_KEY = "city-within-cong-save-v3";
+const SAVE = "huaxia-artifact-journey-v1";
 
 export class Game {
-  constructor() {
-    this.audio = new AudioSystem();
-    this.state = {
-      started: false,
-      phase: "title",
-      currentRegion: 0,
-      solved: [],
-      openingProgress: [],
-      assemblyProgress: [],
-      sound: true
-    };
-    this.nearId = null;
-    this.dialogueQueue = [];
-    this.dialogueCallback = null;
-    this.world = new World(document.getElementById("world"), {
-      onLockPart: (index, id) => this.onLockPart(index, id),
-      onNearChange: (id, solved) => this.onNearChange(id, solved)
-    });
-    this.puzzles = new PuzzleSystem(this.audio);
-    this.bindUI();
-    this.buildGlyphs();
-    this.refreshContinue();
+  constructor(){
+    this.state={quest:0,boat:false,boatEver:false,done:false}; this.near=null; this.queue=[];this.recentConversation=null;this.mapTarget=null;this.audio=new AudioSystem();
+    this.ui={timeline:document.querySelector("#timeline-screen"),map:document.querySelector("#map-screen"),world:document.querySelector("#world-screen"),ending:document.querySelector("#ending-screen"),questCard:document.querySelector("#quest-card"),questToggle:document.querySelector("#quest-toggle"),questCount:document.querySelector("#quest-count"),questTitle:document.querySelector("#quest-title"),questGoal:document.querySelector("#quest-goal"),questCopy:document.querySelector("#quest-copy"),questMemory:document.querySelector("#quest-memory"),memoryRoute:document.querySelector("#memory-route"),mapObjective:document.querySelector("#map-objective"),interaction:document.querySelector("#interaction"),inName:document.querySelector("#interaction-name"),action:document.querySelector("#interaction-action"),dialogue:document.querySelector("#dialogue"),speaker:document.querySelector("#dialogue-speaker"),text:document.querySelector("#dialogue-text"),toast:document.querySelector("#toast"),worldMap:document.querySelector("#world-map"),mapCanvas:document.querySelector("#mini-map-canvas"),lampStatus:document.querySelector("#lamp-status"),lampCard:document.querySelector("#lamp-card"),direction:document.querySelector("#camera-direction"),taskPanel:document.querySelector("#task-panel"),taskKicker:document.querySelector("#task-kicker"),taskTitle:document.querySelector("#task-title"),taskIntro:document.querySelector("#task-intro"),taskActions:document.querySelector("#task-actions"),taskFeedback:document.querySelector("#task-feedback"),taskCancel:document.querySelector("#task-cancel"),mapBase:document.querySelector("#official-map-base"),mapReview:document.querySelector("#map-review-copy"),mapApproval:document.querySelector("#map-approval")};
+    this.world=new World(document.querySelector("#world"),{onNearChange:(o)=>this.setNear(o),onPosition:(p)=>this.updateDot(p),onMapReady:(data)=>{this.mapData={...this.mapData,...data};if(data.target)this.mapTarget=data.target;this.drawMiniMap()},onBlocked:(message)=>this.toast(message),onMoment:(message)=>this.toast(message),onDirection:(d)=>this.ui.direction.textContent=d,onBoatChange:(boat)=>{this.state.boat=boat;this.save();if(!boat){this.ui.interaction.classList.add("is-hidden");this.toast("独木舟已经靠岸。")}}});
+    this.bind(); this.load(); this.normalizeJourney(); this.refreshMap();
   }
-
-  bindUI() {
-    this.ui = {
-      title: document.getElementById("title-screen"),
-      start: document.getElementById("start-game"),
-      continue: document.getElementById("continue-game"),
-      hud: document.getElementById("hud"),
-      region: document.getElementById("region-name"),
-      objective: document.getElementById("objective"),
-      objectiveText: document.getElementById("objective-text"),
-      interaction: document.getElementById("interaction"),
-      interactionLabel: document.getElementById("interaction-label"),
-      interactionAction: document.getElementById("interaction-action"),
-      dialogue: document.getElementById("dialogue"),
-      speaker: document.getElementById("dialogue-speaker"),
-      dialogueText: document.getElementById("dialogue-text"),
-      dialogueNext: document.getElementById("dialogue-next"),
-      chapter: document.getElementById("chapter-card"),
-      chapterNumber: document.getElementById("chapter-number"),
-      chapterTitle: document.getElementById("chapter-title"),
-      chapterSubtitle: document.getElementById("chapter-subtitle"),
-      ending: document.getElementById("ending"),
-      restart: document.getElementById("restart-game"),
-      sound: document.getElementById("sound-toggle"),
-      toast: document.getElementById("toast")
-    };
-    this.ui.start.addEventListener("click", () => this.startNew());
-    this.ui.continue.addEventListener("click", () => this.continueGame());
-    this.ui.restart.addEventListener("click", () => this.startNew());
-    this.ui.dialogueNext.addEventListener("click", () => this.advanceDialogue());
-    this.ui.interactionAction.addEventListener("click", () => this.activateNear());
-    const paintSound=(enabled)=>{this.ui.sound.innerHTML=enabled?'<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M6 13h6l7-6v18l-7-6H6z"/><path d="M23 11c2.5 2.6 2.5 7.4 0 10M26 8c4.3 4.5 4.3 11.5 0 16"/></svg>':'<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M6 13h6l7-6v18l-7-6H6z"/><path d="m23 13 6 6m0-6-6 6"/></svg>';};this.paintSound=paintSound;paintSound(this.state.sound);
-    this.ui.sound.addEventListener("click", () => {
-      this.state.sound = !this.state.sound;
-      this.audio.setEnabled(this.state.sound);
-      paintSound(this.state.sound);
-      this.ui.sound.setAttribute("aria-label", this.state.sound ? "关闭声音" : "开启声音");
-      this.save();
-    });
-    window.addEventListener("keydown", (e) => {
-      const qa = new URLSearchParams(location.search).has("qa");
-      if (qa && e.key.toLowerCase() === "q" && this.state.phase === "region") {
-        const id = REGIONS[this.state.currentRegion].puzzles.find((puzzleId) => !this.state.solved.includes(puzzleId));
-        if (id) this.puzzles.show(id, (solvedId) => this.solvePuzzle(solvedId));
-      }
-      if (qa && e.key.toLowerCase() === "x" && this.puzzles.active) this.puzzles.solved("验收模式：交互状态与完成回调正常。");
-      if (qa && e.key.toLowerCase() === "n" && this.state.phase === "region") {
-        if (this.state.currentRegion < REGIONS.length - 1) this.enterRegion(this.state.currentRegion + 1, false); else this.enterAssembly();
-      }
-      if (/^[1-6]$/.test(e.key) && ["lock", "assembly"].includes(this.state.phase)) {
-        this.onLockPart(Number(e.key) - 1, "keyboard");
-      }
-      if ((e.key === " " || e.key === "Enter") && !this.ui.dialogue.classList.contains("is-hidden")) {
-        e.preventDefault(); this.advanceDialogue();
-      }
-      if ((e.key === "e" || e.key === "Enter") && !this.ui.interaction.classList.contains("is-hidden") && this.ui.dialogue.classList.contains("is-hidden")) {
-        e.preventDefault(); this.activateNear();
-      }
-    });
+  bind(){
+    document.querySelector(".era-active").addEventListener("click",()=>{this.audio.click();this.show("map")});
+    document.querySelector("[data-back]").addEventListener("click",()=>this.show("timeline"));
+    document.querySelector("#liangzhu-marker").addEventListener("click",()=>this.startWorld());
+    document.querySelector("#return-map").addEventListener("click",()=>this.show("map"));
+    document.querySelector("#map-toggle").addEventListener("click",()=>this.ui.worldMap.classList.remove("is-hidden"));
+    document.querySelector("#map-close").addEventListener("click",()=>this.ui.worldMap.classList.add("is-hidden"));
+    document.querySelector("#journey-reset").addEventListener("click",()=>this.resetJourney());
+    this.ui.questToggle.addEventListener("click",()=>{this.audio.click();const expanded=this.ui.questCard.classList.toggle("is-expanded");this.ui.questToggle.textContent=expanded?"收起任务":"展开任务";this.ui.questToggle.setAttribute("aria-expanded",String(expanded));});
+    document.querySelector("#camera-turn").addEventListener("click",()=>{this.audio.click();this.world.turnCamera()});
+    this.ui.action.addEventListener("click",()=>this.activate());this.ui.taskCancel.addEventListener("click",()=>this.cancelTask());
+    document.addEventListener("pointerup",()=>{if(!this.ui.dialogue.classList.contains("is-hidden"))this.closeDialogue();});
+    addEventListener("keydown",e=>{if((e.key==="e"||e.key==="Enter")&&!this.ui.interaction.classList.contains("is-hidden"))this.activate();if((e.key===" "||e.key==="Enter"||e.key==="Escape")&&!this.ui.dialogue.classList.contains("is-hidden")){e.preventDefault();this.closeDialogue();}});
   }
-
-  buildGlyphs() {
-    const wrap = document.getElementById("glyphs");
-    wrap.replaceChildren();
-    for (let i = 0; i < 8; i += 1) {
-      const glyph = document.createElement("span");
-      glyph.className = "glyph";
-      glyph.setAttribute("aria-label", `第${i + 1}幅纹样`);
-      wrap.append(glyph);
-    }
-    this.glyphEls = [...wrap.children];
+  show(which){["timeline","map","world","ending"].forEach(k=>this.ui[k].classList.toggle("is-hidden",k!==which));if(which!=="world"){this.ui.worldMap.classList.add("is-hidden");this.audio.stopAmbient()}if(which==="map")this.refreshMap();}
+  normalizeJourney(){const q=Number(this.state.quest);if(Number.isInteger(q)&&q>=0&&q<QUESTS.length)return false;this.state.quest=0;this.state.boat=false;this.state.boatEver=false;this.save();return true;}
+  resetJourney(){if(!confirm("要从玉料山重新开始玉琮王的旅程吗？当前任务进度将被清除。"))return;this.state={quest:0,boat:false,boatEver:false,done:false};this.activeTask=null;this.recentConversation=null;this.ui.taskPanel.classList.add("is-hidden");this.ui.dialogue.classList.add("is-hidden");this.save();this.refreshMap();this.world.build();this.startWorld();}
+  startWorld(){const reset=this.normalizeJourney();this.show("world");this.audio.settlement();if(!this.world.started)this.world.build();this.state.boat=false;this.world.setBoat(false);this.updateQuest();if(reset)this.toast("上一轮旅程已结束；现在从玉料的山重新开始。");if(this.state.quest===0)this.say([["玉琮王", "我忘了自己的来时路。你可以自由探索这座城；若想替我找回记忆，就从西边的玉矿山开始。"]]);else{const q=QUESTS[this.state.quest];this.toast(`继续记忆：${q.title}。${q.hint}`)}}
+  updateQuest(){const q=QUESTS[this.state.quest];if(!q)return;this.ui.questCount.textContent=`${String(this.state.quest+1).padStart(2,"0")} / 07`;this.ui.questTitle.textContent=q.title;this.ui.questGoal.textContent=`目标：${q.target} · ${q.hint}`;this.ui.questCopy.textContent=q.copy;this.ui.questMemory.textContent=q.memory;this.ui.mapObjective.textContent=`当前目标：${q.target}`;[...this.ui.memoryRoute.children].forEach((li,i)=>li.classList.toggle("is-current",i===q.chapter));this.world.setQuest(q.id);this.drawMiniMap();}
+  setNear(o){const changed=o?.id!==this.near?.id;this.near=o;if(changed)this.recentConversation=null;if(!o||!this.ui.dialogue.classList.contains("is-hidden")||!this.ui.taskPanel.classList.contains("is-hidden")||this.recentConversation===o.id){this.ui.interaction.classList.add("is-hidden");return;}this.ui.inName.textContent=o.name;const q=QUESTS[this.state.quest];const isTaskTarget=o.id===q?.id;this.ui.action.textContent=o.kind==="boat"?(this.state.boat?"靠岸中":isTaskTarget?TASKS[q.id].action:"登船"):isTaskTarget?TASKS[q.id].action:o.kind==="quest"?"交谈":"听他说说";this.ui.interaction.classList.remove("is-hidden");}
+  talk(o,lines,done){this.recentConversation=o.id;this.say(lines,done)}
+  startTask(q,o){this.activeTask={id:q.id,object:o};const task=TASKS[q.id];this.world.playMoment(q.id);this.ui.taskKicker.textContent=task.kicker;this.ui.taskTitle.textContent=task.title;this.ui.taskIntro.textContent=task.intro;this.ui.taskFeedback.textContent="";this.ui.taskActions.replaceChildren();this.ui.taskPanel.classList.remove("is-hidden");if(q.id==="quarry")this.renderMaterialTask(q,task);else if(task.mode==="sequence")this.renderSequenceTask(q,task);else this.renderSelectTask(q,task);}
+  taskButton(label){const b=document.createElement("button");b.type="button";b.className="task-choice";b.textContent=label;this.ui.taskActions.append(b);return b}
+  renderSequenceTask(q,task){let step=0;const buttons=task.options.map((item,index)=>{const b=this.taskButton(item.label);b.addEventListener("click",()=>{if(!this.activeTask||this.activeTask.id!==q.id)return;if(index!==step){this.audio.error();step=0;buttons.forEach(x=>{x.disabled=false;x.classList.remove("is-done")});this.ui.taskFeedback.textContent="顺序不对，先从第一步重新来。";return;}this.audio.click();b.disabled=true;b.classList.add("is-done");step++;if(step===task.options.length)this.solveTask(q,task);else this.ui.taskFeedback.textContent=`做得对。接着完成第 ${step+1} 步。`;});return b});this.ui.taskFeedback.textContent="从第一步开始，按顺序点击操作。";}
+  renderSelectTask(q,task){const correct=task.options.filter(x=>x.correct).length;const chosen=new Set;task.options.forEach((item,index)=>{const b=this.taskButton(item.label);b.addEventListener("click",()=>{if(!this.activeTask||this.activeTask.id!==q.id||b.disabled)return;if(!item.correct){this.audio.error();b.classList.add("is-wrong");b.disabled=true;this.ui.taskFeedback.textContent="这不是要找的东西。看看材质和它将要承担的用途。";return;}this.audio.jade();chosen.add(index);b.disabled=true;b.classList.add("is-done");if(chosen.size===correct)this.solveTask(q,task);else this.ui.taskFeedback.textContent="找对了一件，再看看还有没有同样重要的物件。";});});this.ui.taskFeedback.textContent="仔细选择；选错不会扣进度。";}
+  renderMaterialTask(q,task){
+    // A genuine CSS 3D cube gives each material a top, front and side face.
+    // Its pixel chips are deliberately different by material, like a block texture.
+    const materials=["jade-ore","loose-earth","layered-slate"];
+    const letters=["A","B","C"];const wrap=document.createElement("div");wrap.className="material-choices";
+    task.options.forEach((item,index)=>{const b=document.createElement("button");b.type="button";b.className="material-choice";b.setAttribute("aria-label",`${letters[index]}：${item.label}`);b.innerHTML=`<span class="voxel-stage" aria-hidden="true"><span class="voxel-cube ${materials[index]}"><i class="voxel-face voxel-front"></i><i class="voxel-face voxel-right"></i><i class="voxel-face voxel-top"></i><i class="voxel-face voxel-back"></i><i class="voxel-face voxel-left"></i><i class="voxel-face voxel-bottom"></i></span></span><b>${letters[index]}</b>`;b.addEventListener("click",()=>{if(!this.activeTask||this.activeTask.id!==q.id||b.disabled)return;if(!item.correct){this.audio.error();b.disabled=true;b.classList.add("is-wrong");this.ui.taskFeedback.textContent="这块质地松散或层裂，磨制时会破。再观察石皮下的光泽与纹理。";return;}this.audio.jade();b.disabled=true;b.classList.add("is-done");this.solveTask(q,task);});wrap.append(b);});this.ui.taskActions.append(wrap);this.ui.taskFeedback.textContent="请选择适合制作玉琮的玉料。";
   }
-
-  refreshContinue() {
-    const saved = localStorage.getItem(SAVE_KEY);
-    this.ui.continue.classList.toggle("is-hidden", !saved);
+  solveTask(q,task){if(!this.activeTask||this.activeTask.id!==q.id)return;this.audio.success();this.activeTask=null;this.ui.taskPanel.classList.add("is-hidden");const advanced=this.completeQuest(q.id);this.recentConversation=null;if(advanced&&!this.state.done){const fact=q.fact?` 考古线索：${q.fact}`:"";this.say([[q.speaker,`${task.success} ${q.line}${fact}`]]);}}
+  cancelTask(){if(!this.activeTask)return;this.activeTask=null;this.ui.taskPanel.classList.add("is-hidden");this.ui.taskFeedback.textContent="";this.setNear(this.near);}
+  activate(){const o=this.near;if(!o||this.activeTask)return;this.ui.interaction.classList.add("is-hidden");let q=QUESTS[this.state.quest];if(!q){this.normalizeJourney();this.updateQuest();q=QUESTS[this.state.quest];this.toast("记忆进度已恢复到第一段，请重新与采玉人交谈。");this.setNear(this.near);return;}if(o.kind==="boat"&&q.id==="boat"&&o.id==="boat"){this.startTask(q,o);return;}if(o.kind==="boat"){if(this.state.boat){this.toast("靠近码头会自动下船，不需要再点借船。");return;}if(this.state.quest<2){this.toast("先从采玉人那里完成辨玉任务，再来找船娘。");return;}this.state.boat=true;this.state.boatEver=true;this.world.setBoat(true);this.toast("你坐上独木舟。沿河行进，靠近码头会自动下船。");this.save();return;}
+    if(o.kind==="side"){const story=SIDE_STORIES.find(x=>x.id===o.id);this.talk(o,[[story.name,story.copy]]);return;}
+    if(o.id!==q.id){this.talk(o,[[o.name,o.copy]]);return;}
+    if(q.id==="transport"&&!this.state.boatEver){this.toast("河道挡住了去路。先在西南码头借船并登船。");return;}
+    this.startTask(q,o);
   }
-
-  startNew() {
-    localStorage.removeItem(SAVE_KEY);
-    this.state = { started: true, phase: "lock", currentRegion: 0, solved: [], openingProgress: [], assemblyProgress: [], sound: true };
-    this.paintSound(true);
-    this.audio.ensure(); this.audio.setEnabled(true); this.audio.drone(0);
-    this.ui.title.classList.remove("active");
-    this.ui.ending.classList.add("is-hidden");
-    this.ui.hud.classList.remove("is-hidden");
-    this.updateGlyphs();
-    this.enterLock();
-    this.say(INTRO_LINES, () => this.setObjective("拖动空处旋转观察；按住玉面向外拉。四面展开后，才能分离上、下射口。"));
+  completeQuest(expectedId=null){const completed=QUESTS[this.state.quest];if(!completed||this.completing||(expectedId&&completed.id!==expectedId))return false;this.completing=true;this.state.quest++;if(this.state.quest>=QUESTS.length){this.state.done=true;this.save();this.world.collapse();this.refreshMap();this.show("ending");this.completing=false;return true;}this.updateQuest();this.save();this.toast(`任务完成：${completed.title}。下一步：${QUESTS[this.state.quest].target}`);this.completing=false;return true;}
+  say(lines,done=null){const line=lines.at(-1);if(!line)return;this.after=done;this.ui.speaker.textContent=line[0];this.ui.text.textContent=line[1];this.ui.dialogue.classList.remove("is-hidden");}
+  closeDialogue(){if(this.ui.dialogue.classList.contains("is-hidden"))return;this.ui.dialogue.classList.add("is-hidden");const f=this.after;this.after=null;if(f)f();else this.setNear(this.near);}
+  updateDot(p){this.lastPosition={x:p.x,z:p.z};this.drawMiniMap();}
+  drawMiniMap(){
+    const canvas=this.ui.mapCanvas,data=this.mapData,p=this.lastPosition;if(!canvas||!data)return;const ctx=canvas.getContext("2d"),w=canvas.width,h=canvas.height,minX=-64,maxX=64,minZ=-40,maxZ=40,toX=x=>(x-minX)/(maxX-minX)*w,toY=z=>(z-minZ)/(maxZ-minZ)*h;
+    const polygon=(pts,fill,stroke)=>{ctx.beginPath();pts.forEach(([x,z],i)=>i?ctx.lineTo(toX(x),toY(z)):ctx.moveTo(toX(x),toY(z)));ctx.closePath();ctx.fillStyle=fill;ctx.fill();if(stroke){ctx.strokeStyle=stroke;ctx.stroke();}};
+    ctx.clearRect(0,0,w,h);ctx.fillStyle="#215a70";ctx.fillRect(0,0,w,h);polygon(data.land,"#6f8e67","#c2aa76");data.water.forEach(poly=>polygon(poly,"#4d9eb5"));
+    // Docks are supporting navigation, not quests: keep them quiet so the
+    // current orange exclamation remains the one clear destination on the map.
+    ctx.fillStyle="#c7c3a2";data.docks.forEach(d=>ctx.fillRect(toX(d.x)-1.5,toY(d.z)-1.5,3,3));
+    const target=data.target||this.mapTarget;if(target){const pulse=6+Math.sin(performance.now()/230)*1.5,tx=toX(target.x),ty=toY(target.z);ctx.strokeStyle="#fff0a5";ctx.lineWidth=2.5;ctx.beginPath();ctx.arc(tx,ty,pulse,0,Math.PI*2);ctx.stroke();ctx.fillStyle="#ef783d";ctx.beginPath();ctx.arc(tx,ty,5,0,Math.PI*2);ctx.fill();ctx.fillStyle="#172e26";ctx.font="bold 14px sans-serif";ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText("!",tx,ty+.4);ctx.fillStyle="#fff0bd";ctx.font="bold 10px sans-serif";ctx.fillText("当前任务",tx,ty-11)}
+    if(p){ctx.beginPath();ctx.arc(toX(p.x),toY(p.z),4.3,0,Math.PI*2);ctx.fillStyle="#fff3a8";ctx.fill();ctx.strokeStyle="#274438";ctx.lineWidth=1.5;ctx.stroke()}
   }
-
-  continueGame() {
-    const saved = this.load();
-    if (!saved) return this.startNew();
-    this.state = { ...this.state, ...saved, started: true, phase: "region" };
-    this.paintSound(this.state.sound);
-    this.audio.ensure(); this.audio.setEnabled(this.state.sound);
-    this.ui.title.classList.remove("active");
-    this.ui.ending.classList.add("is-hidden");
-    this.ui.hud.classList.remove("is-hidden");
-    this.updateGlyphs();
-    this.enterRegion(this.state.currentRegion, false);
-    this.toast("旅程从保存的神徽继续");
-  }
-
-  enterLock() {
-    this.state.phase = "lock";
-    this.state.openingProgress = [];
-    this.ui.region.textContent = "玉琮王 · 外部";
-    this.ui.objective.classList.remove("is-hidden");
-    this.ui.interaction.classList.add("is-hidden");
-    this.world.buildLock(false);
-  }
-
-  onLockPart(index) {
-    if (this.state.phase === "lock") {
-      if (this.state.openingProgress.includes(index)) return;
-      const wallsOpen = this.state.openingProgress.filter((i) => i < 4).length;
-      if (index >= 4 && wallsOpen < 4) { this.audio.error(); this.world.setLockPart(index, false); this.toast("射口仍被四壁咬合。先展开四个带纹样的立面。"); return; }
-      this.world.setLockPart(index, true);
-      this.state.openingProgress.push(index);
-      this.audio.jade();
-      const count = this.state.openingProgress.length;
-      this.setObjective(count < 4 ? `器内地貌已显现 ${count}/4 面` : `结构投影已展开 ${count}/6`);
-      if (count === 6) {
-        window.setTimeout(() => {
-          this.say([["结构投影", "四面地貌在中央圆孔中接成一张地图。最先抵达的是水声。"]], () => this.enterRegion(0));
-        }, 900);
-      }
-      return;
-    }
-    if (this.state.phase === "assembly") {
-      if (this.state.assemblyProgress.includes(index)) return;
-      const rimsClosed = this.state.assemblyProgress.filter((i) => i >= 4).length;
-      if (index < 4 && rimsClosed < 2) { this.audio.error(); this.world.setLockPart(index, true); this.toast("先让上、下射口归位，四壁才有承托。"); return; }
-      this.world.setLockPart(index, false);
-      this.state.assemblyProgress.push(index);
-      this.audio.jade();
-      this.setObjective(`结构已归位 ${this.state.assemblyProgress.length}/6`);
-      if (this.state.assemblyProgress.length === 6) window.setTimeout(() => this.finish(), 1400);
-    }
-  }
-
-  enterRegion(index, showChapter = true) {
-    this.state.phase = "region";
-    this.state.currentRegion = index;
-    const region = REGIONS[index];
-    this.ui.region.textContent = region.name;
-    this.setObjective(region.objective);
-    this.world.buildRegion(index, this.state.solved);
-    this.audio.drone(index);
-    if (showChapter) this.showChapter(region);
-    this.save();
-  }
-
-  showChapter(region) {
-    this.ui.chapterNumber.textContent = region.chapter;
-    this.ui.chapterTitle.textContent = region.name;
-    this.ui.chapterSubtitle.textContent = region.subtitle;
-    this.ui.chapter.classList.remove("is-hidden");
-    window.setTimeout(() => this.ui.chapter.classList.add("is-hidden"), 3000);
-  }
-
-  onNearChange(id, solved = false) {
-    this.nearId = id;
-    if (!id || !this.ui.dialogue.classList.contains("is-hidden") || !this.puzzles.panel.classList.contains("is-hidden")) {
-      this.ui.interaction.classList.add("is-hidden"); return;
-    }
-    if (id.startsWith("portal:")) {
-      this.ui.interactionLabel.textContent = id === "portal:final" ? "中央之门已经开启" : "前往下一座城域";
-      this.ui.interactionAction.textContent = "穿过";
-    } else {
-      const puzzle = PUZZLES[id];
-      this.ui.interactionLabel.textContent = solved ? `${puzzle.title} · 纹样已亮` : puzzle.title;
-      this.ui.interactionAction.textContent = solved ? "聆听" : "调查";
-    }
-    this.ui.interaction.classList.remove("is-hidden");
-  }
-
-  activateNear() {
-    const id = this.nearId;
-    if (!id) return;
-    if (id === "portal:next") {
-      const next = Math.min(this.state.currentRegion + 1, REGIONS.length - 1);
-      this.ui.interaction.classList.add("is-hidden");
-      this.enterRegion(next); return;
-    }
-    if (id === "portal:final") {
-      this.ui.interaction.classList.add("is-hidden");
-      this.enterAssembly(); return;
-    }
-    if (this.state.solved.includes(id)) {
-      this.audio.jade(); this.toast("这组纹样已经复原，装置仍在安静运转"); return;
-    }
-    this.ui.interaction.classList.add("is-hidden");
-    this.puzzles.show(id, (solvedId) => this.solvePuzzle(solvedId));
-  }
-
-  solvePuzzle(id) {
-    if (!this.state.solved.includes(id)) this.state.solved.push(id);
-    this.world.completePuzzle(id);
-    this.updateGlyphs();
-    const region = REGIONS[this.state.currentRegion];
-    const regionSolved = region.puzzles.every((puzzleId) => this.state.solved.includes(puzzleId));
-    if (regionSolved) {
-      this.world.revealPortal();
-      this.say([[region.name, REGION_COMPLETE_LINES[region.id]]], () => {
-        this.setObjective(this.state.currentRegion === REGIONS.length - 1 ? "穿过中央圆孔，把八幅纹样带回器表。" : "这一面已经恢复。沿道路寻找金色门扉。");
-      });
-    } else {
-      const remaining = region.puzzles.find((puzzleId) => !this.state.solved.includes(puzzleId));
-      this.setObjective(`第一处装置改变了道路。前往“${PUZZLES[remaining].title}”。`);
-    }
-    this.save();
-  }
-
-  enterAssembly() {
-    this.state.phase = "assembly";
-    this.state.assemblyProgress = [];
-    this.nearId = null;
-    this.ui.interaction.classList.add("is-hidden");
-    this.ui.region.textContent = "玉琮王 · 归器";
-    this.setObjective("先把上、下射口向中心拖回，再让四个带城域的立面归位。" );
-    this.world.buildLock(true);
-    this.audio.drone(3);
-    this.say([
-      ["观察记录", "水利、稻作、制玉与城台不再是四段说明，它们已经成为同一座城市的互证。"],
-      ["结构投影", "把六个面拖回中央。纹样会留在器表，地貌会退回玉中。"]
-    ]);
-  }
-
-  finish() {
-    this.state.phase = "ending";
-    this.audio.stopAmbient(); this.audio.success();
-    localStorage.removeItem(SAVE_KEY);
-    this.ui.dialogue.classList.add("is-hidden");
-    this.ui.hud.classList.add("is-hidden");
-    this.ui.objective.classList.add("is-hidden");
-    this.ui.interaction.classList.add("is-hidden");
-    this.ui.ending.classList.remove("is-hidden");
-    this.refreshContinue();
-  }
-
-  updateGlyphs() {
-    this.glyphEls.forEach((glyph, i) => {
-      const lit = Object.values(PUZZLES).some((puzzle) => puzzle.glyph === i && this.state.solved.includes(Object.keys(PUZZLES).find((key) => PUZZLES[key] === puzzle)));
-      glyph.classList.toggle("lit", lit);
-      glyph.setAttribute("aria-label", `第${i + 1}幅纹样${lit ? "已复原" : "未复原"}`);
-    });
-  }
-
-  setObjective(text) {
-    this.ui.objectiveText.textContent = text;
-    this.ui.objective.classList.remove("is-hidden");
-  }
-
-  say(lines, callback = null) {
-    this.dialogueQueue = [...lines];
-    this.dialogueCallback = callback;
-    this.ui.interaction.classList.add("is-hidden");
-    this.ui.dialogue.classList.remove("is-hidden");
-    this.advanceDialogue(true);
-  }
-
-  advanceDialogue(initial = false) {
-    if (!initial && this.dialogueQueue.length === 0) {
-      this.ui.dialogue.classList.add("is-hidden");
-      const callback = this.dialogueCallback;
-      this.dialogueCallback = null;
-      if (callback) callback();
-      return;
-    }
-    const line = this.dialogueQueue.shift();
-    if (!line) return this.advanceDialogue(false);
-    this.audio.click();
-    this.ui.speaker.textContent = line[0];
-    this.ui.dialogueText.textContent = line[1];
-    this.ui.dialogueNext.textContent = this.dialogueQueue.length ? "继续" : "进入";
-  }
-
-  toast(text) {
-    this.ui.toast.textContent = text;
-    this.ui.toast.classList.remove("is-hidden");
-    window.clearTimeout(this.toastTimer);
-    this.toastTimer = window.setTimeout(() => this.ui.toast.classList.add("is-hidden"), 2200);
-  }
-
-  save() {
-    if (!this.state.started || this.state.phase === "ending") return;
-    localStorage.setItem(SAVE_KEY, JSON.stringify({ currentRegion: this.state.currentRegion, solved: this.state.solved, sound: this.state.sound }));
-    this.refreshContinue();
-  }
-
-  load() {
-    try { return JSON.parse(localStorage.getItem(SAVE_KEY)); } catch (_) { return null; }
-  }
+  toast(s){this.ui.toast.textContent=s;this.ui.toast.classList.remove("is-hidden");clearTimeout(this.timer);this.timer=setTimeout(()=>this.ui.toast.classList.add("is-hidden"),2600);}
+  refreshMap(){this.ui.lampStatus.textContent=this.state.done?"西汉 · 已解锁（下一世界）":"西汉 · 待解锁";this.ui.lampCard.classList.toggle("unlocked",this.state.done);const ready=hasPublishableStandardMap();this.ui.mapBase.classList.toggle("is-approved",ready);this.ui.mapBase.style.backgroundImage=ready?`url(${STANDARD_MAP.assetUrl})`:"";this.ui.mapReview.textContent=ready?"正式底图已加载；文物标记以独立图层叠加。":"尚未载入带审图号且已完成公开使用审核的正式底图。";this.ui.mapApproval.textContent=ready?`审图号：${STANDARD_MAP.approvalNo}`:`待补：${STANDARD_MAP.catalogHint}`;}
+  save(){localStorage.setItem(SAVE,JSON.stringify(this.state));} load(){try{this.state={...this.state,...JSON.parse(localStorage.getItem(SAVE)||"{}")} }catch(_){}this.state.boat=false;}
 }

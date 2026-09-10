@@ -1,30 +1,47 @@
-export const REGIONS = [
-  { id:"water", name:"水利面", chapter:"第一面", subtitle:"水网没有孤立的一段", objective:"沿西堤抵达木闸，放下北桥；过桥完成洲岛架桥，再沿南桥走向离城门。", color:0x79aeb6, ground:0xaeb08a, puzzles:["water-gates","water-crossing"] },
-  { id:"grain", name:"稻作面", chapter:"第二面", subtitle:"雨影先于雨抵达田野", objective:"观察旗、云与谷物的状态，在雨线抵达前完成收、晒、运。", color:0xd7b95e, ground:0xb6a66b, puzzles:["grain-weather","grain-ferry"] },
-  { id:"jade", name:"制玉面", chapter:"第三面", subtitle:"光、砂与声音都是量具", objective:"布置看料灯阵照亮整块玉料，再推动断面钻芯校准三条对钻孔道。", color:0x7eae95, ground:0x89957e, puzzles:["jade-light","jade-drill"] },
-  { id:"ritual", name:"城台面", chapter:"第四面", subtitle:"位置把零散证据变成关系", objective:"在反山M12的抽象平面上复原器物关系，再从八幅纹样中找出连续中轴。", color:0xbb806a, ground:0x8f806f, puzzles:["ritual-map","ritual-pattern"] }
+export const QUESTS = [
+  {id:"quarry",title:"寻找玉料的山",copy:"玉琮王不记得自己从哪里来。先去西侧山脚，问问采玉人。",memory:"第 1 段：它曾是一块仍在山里的玉料",chapter:0,target:"采玉人",hint:"西边的低山旁有白色玉脉。",speaker:"采玉人 阿岑",line:"这块石头在山里睡了很久。你手里这件玉器，原先也是一块带着石皮的玉料。拿上这枚玉胚，沿水路送进城吧。",fact:"良渚出土玉器保留着器形、纹样、材料和复杂加工技术的证据。"},
+  {id:"boat",title:"借一只船",copy:"玉料太重，不能绕着河网走。带着玉胚去西南码头，请船娘借船。",memory:"第 2 段：玉料必须沿水路进入城中",chapter:1,target:"船娘",hint:"水上聚落的西南码头。",speaker:"船娘 阿汀",line:"内城河的水路比陆路近得多。船借你，不过要记得：没有船，河就是边界；有了船，河才是路。",fact:"良渚城址处在河网交织的平原；水利系统不是背景，而是城市组织的一部分。"},
+  {id:"transport",title:"把玉料运过内城河",copy:"登船后，穿过河道，抵达东岸的工坊运料栈台。",memory:"第 2 段：船桨划开河网，玉胚进入内城",chapter:1,target:"工坊运料栈台",hint:"登船后可穿水；靠岸后穿过草地与木棚，到栈台卸下玉胚。",speaker:"玉琮王",line:"我记起来一点了：船桨划开水面，玉胚在船舱里轻轻碰撞。原来我曾经这样进城。",fact:"高坝、平原低坝与城址共同构成外围水利体系，也说明了水路与聚落空间的联系。"},
+  {id:"workshop",title:"在工坊慢慢成形",copy:"和制玉工坊里的匠人交谈，看看一块玉料怎样被磨成玉琮。",memory:"第 3 段：砂、水和漫长的时间，让玉料成器",chapter:2,target:"制玉匠",hint:"工坊在东岸木棚下。",speaker:"制玉匠 巫宁",line:"不是一刀刻出来的。先切开，再用砂和水一点点磨；中间的孔，要从两端对着钻。做玉，是一件很慢的事。",fact:"精细玉器是良渚手工业能力最直观的物证之一。"},
+  {id:"ritual",title:"登上宫殿区祭台",copy:"玉琮做好后被带往宫殿区。穿过草坡与林间空地，去有火光的高台。",memory:"第 4 段：成器被举上祭台，连接一座城",chapter:3,target:"祭司",hint:"东侧高台上有火光与旗幡；若被河网挡住，就去有船夫的渡口。",speaker:"祭司",line:"玉琮被举起来时，所有人都能看见它。它不是给一个人看的玉，而是把人、神与这座城连在一起的玉。",fact:"祭坛与成组玉器共同呈现了良渚统一的信仰体系。"},
+  {id:"tomb",title:"抵达反山王陵",copy:"仪式结束后，去东渡口上船，随送葬队渡河前往反山王陵。",memory:"第 4 段：它被郑重安放进王陵，成为随葬的记忆",chapter:3,target:"陵墓守卫",hint:"南岸的土丘与白色幡旗。",speaker:"守陵人",line:"最后，它和许多珍贵的玉器一起留在这里。不是消失，是把那座城的记忆藏进黑暗里。",fact:"不同规格的墓葬，是理解良渚社会分工与等级结构的重要线索。"},
+  {id:"flood",title:"听见堤坝外的水",copy:"玉琮王想起了完整的来时路。去东边堤坝上，望一望城外的水。",memory:"第 5 段：城安静下来，而它穿过五千年留下",chapter:4,target:"东堤",hint:"世界尽头那道高高的堤坝。",speaker:"玉琮王",line:"后来，水变得陌生，屋舍与道路慢慢安静下来。但我被留住了。五千年后，你又替我把这条路走了一遍。",fact:"良渚遗址约在公元前3300至前2300年间延续；城址、水利、墓葬与玉器共同讲述这座早期城市。"}
 ];
 
-export const PUZZLES = {
-  "water-gates": { region:"water", glyph:0, kicker:"水利面 · 闸渠网", title:"二十五闸成网", copy:"转动每块木闸，让中央水源抵达全部二十五格。每一个渠口都必须与相邻渠口互接，不能冲向边界，也不能留下孤立水段。", type:"pipes" },
-  "water-crossing": { region:"water", glyph:1, kicker:"水利面 · 洲岛", title:"十五岛连桥", copy:"岛上大字是它需要连接的桥数。让同一横列或竖列、且中间没有其他岛的两座岛相连；每段可为零、一或两座桥。数字吻合、桥不相交且十五岛全连通时，南桥才会落下。", type:"bridge" },
-  "grain-weather": { region:"grain", glyph:2, kicker:"稻作面 · 雨线", title:"雨前八刻", copy:"八道工序被风吹乱了。利用先后、紧邻与固定间距线索，把收割、脱粒、扬场、晒谷、装篓、水运和入仓排进唯一次序。", type:"timeline" },
-  "grain-ferry": { region:"grain", glyph:3, kicker:"稻作面 · 四水道", title:"一潮四舟", copy:"二十格物资要在同一潮次离岸。舱位只是上限，船可留空；读懂水道、货性、同舟与避让关系，才能推演出唯一的调度。", type:"cargo" },
-  "jade-light": { region:"jade", glyph:4, kicker:"制玉面 · 看料", title:"玉料灯阵", copy:"在玉料空格点灯，让全部玉面受光。两盏灯不能彼此照见；刻有数字的深色玉料四周，必须恰有相应数量的灯。", type:"light" },
-  "jade-drill": { region:"jade", glyph:5, kicker:"制玉面 · 对钻", title:"三芯校孔", copy:"三枚钻芯卡在断面里。每次只能从背后推动，不能回拉；把它们分别推入发光孔位，为玉琮的三条对钻孔道校正轴线。", type:"drill" },
-  "ritual-map": { region:"ritual", glyph:6, kicker:"城台面 · 探方", title:"夯土边界", copy:"一百个探方只留下每行、每列的连续土色记录。按数字标出夯土；不同数字之间必须至少隔一个空格。", type:"map" },
-  "ritual-pattern": { region:"ritual", glyph:7, kicker:"城台面 · 微雕", title:"神徽九宫", copy:"九块神徽拓片被滑乱。每次只能把相邻拓片滑进空槽；让羽冠在上、神人居中、兽面重圈眼在下，复原完整微雕。", type:"pattern" }
-};
-
-export const INTRO_LINES = [
-  ["观察记录", "这件器物高约八点九厘米，最宽处约十七点六厘米：内圆外方，中央对钻成孔。"],
-  ["观察记录", "四面直槽内，上下各有一幅完整神人兽面纹；八幅微雕，是进入器内世界的八条线索。"],
-  ["结构投影", "转动观察器物。按住一面向外拖开；四面展开后，再分离上下射口。城市会从内壁显现。"]
+export const SIDE_STORIES = [
+  {id:"rice",name:"稻田里的阿禾",copy:"打谷不是把稻子收回来就结束了。晒、藏、运，都要看天和水。"},
+  {id:"potter",name:"陶工",copy:"你看，这个罐子要放在船上。圆一点，才不容易在水里磕坏。"},
+  {id:"fisher",name:"渔人",copy:"河里有鱼，河边有路。我们每天都从水上回家。"},
+  {id:"child",name:"堤坝上的孩子",copy:"城外不能走太远，阿母说堤坝外面是很大的水和很远的山。"},
+  {id:"weaver",name:"织麻人",copy:"这条麻线会被换成石料、木头，也会换来别处的故事。"},
+  {id:"family",name:"屋里的阿槐",copy:"上面住人，下面养猪。雨天时，我们在高高的地板上听见猪在屋下打呼噜。"},
+  {id:"herder",name:"猪圈旁的阿乐",copy:"小猪在屋下躲雨，人住在高处，潮水涨起来也不怕。"},
+  {id:"cook",name:"河湾的阿婉",copy:"她在高脚屋里煮饭，烟从屋顶缝里慢慢散出去。"},
+  {id:"carpenter",name:"制舟人",copy:"独木舟要掏得又轻又稳。河道没有桥，水上的路全靠它。"},
+  {id:"loom",name:"屋里的织机",copy:"麻线穿过木架，慢慢变成能遮雨、能交换的布。"},
+  {id:"hearth",name:"火塘",copy:"火塘的烟从屋顶散出去，屋里的人围着它煮饭、修工具、讲一天的见闻。"},
+  {id:"granary",name:"陶罐和谷物",copy:"稻谷被晒干后装进陶罐，架在高处，避开潮气和小兽。"},
+  {id:"granary-store",name:"聚落的高仓",copy:"收好的稻谷先晒干，再装进陶器和编筐，存到离地的高仓里。粮食能过潮湿的季节，一座城才有余力做玉、修堤、举行仪式。"},
+  {id:"pigpen",name:"屋下的小猪",copy:"猪住在高脚屋下面，能躲雨，也能让人住的地方离潮湿的地面更远。"}
+  ,{id:"palace",name:"城内高台居所",copy:"木柱、夯土台和茅草屋顶围出一处高台居所。它不以金银炫耀，却让人看见组织修堤、制玉与祭仪所需的聚落权力。"}
+  ,{id:"palace-resident",name:"高台居所的执事",copy:"这里不是后世想象中的金殿。木屋、夯土台、粮食和祭器，把安排劳作、分配物资与组织仪式的人聚到一起。"}
+  ,{id:"palace-tally",name:"高台的刻痕板",copy:"木板上一道道刻痕，记的不是金银，而是谷物、工具与要分派的劳作。大型聚落里，记住这些事情也是一种本领。"}
+  ,{id:"palace-store",name:"高台院里的储物罐",copy:"罐里的干粮和种子需要避潮保存。高台院落并不神秘，它也要面对一座城每天吃什么、存什么、怎样分给大家。"}
+  ,{id:"rice-yard",name:"晒谷与舂米场",copy:"稻子离开田里后，还要晒干、脱粒、舂去外壳，最后才进高仓。田、晒场与粮仓是一条完整的生活链。"}
+  ,{id:"food-yard",name:"肉食处理棚",copy:"屋下饲养之外，清洗、分切、晾晒和储存也需要独立的棚与水盆。这里不展示血腥，只让人看见食物如何被认真处理。"}
+  ,{id:"necropolis",name:"反山墓地",copy:"大小不一的墓丘、木幡与送葬用的木架把这里读成墓地。墓葬的规格差异，也保留下社会如何分工与纪念逝者的线索。"}
+  ,{id:"grave-offering",name:"墓前的陶器",copy:"陶器被安放在墓丘旁，不是装饰。它让后来的人看见，当时的人愿意把怎样的日常和心意，一起留给逝者。"}
+  ,{id:"grave-banner",name:"送葬的白幡",copy:"风吹动白幡，也把墓地从普通山坡中区分出来。大小不同的墓丘并列在一起，提醒人们这座城有不同的身份与分工。"}
 ];
 
-export const REGION_COMPLETE_LINES = {
-  water:"河道已经贯通，浮桥落在可以行走的位置。",
-  grain:"最后一筐干燥稻谷赶在雨线之前入仓。",
-  jade:"光找到了裂隙，两端孔道也在黑暗中相遇。",
-  ritual:"器物关系与纹样中轴同时复原，中央圆孔重新显出归路。"
+// Each chapter has a short physical action in its own setting. Speaking to an
+// NPC starts the work; it never completes a chapter by itself.
+export const TASKS = {
+  quarry:{mode:"select",action:"帮忙辨玉",kicker:"采玉 · 01",title:"替阿岑辨出玉料",intro:"山脚的碎石里，只有真正的玉胚经得起后面的切、磨与钻。选出该带走的一块。",success:"你从石皮下辨出了坚硬的青白玉胚。阿岑把它郑重交给阿玉。",options:[{label:"带石皮、透出青白光的硬玉胚",correct:true},{label:"一捏就散的潮湿黄土",correct:false},{label:"层层开裂的松脆页岩",correct:false}]},
+  boat:{mode:"sequence",action:"取得借船许可",kicker:"水路 · 02",title:"把独木舟备好",intro:"阿汀把船借给你之前，要先确认它能安全离岸。按水上人的次序完成准备。",success:"缆绳收好，船腹稳当。阿汀点头：现在，这条河可以成为你的路。",options:[{label:"检查船腹有没有裂缝"},{label:"收起系在木桩上的缆绳"},{label:"把独木舟推离浅滩"}]},
+  transport:{mode:"sequence",action:"卸下玉料",kicker:"运料 · 03",title:"把玉胚交进工坊",intro:"船靠上东岸栈台后，重玉料不能随手抛下。按稳妥的卸料顺序把它交给工坊。",success:"玉胚没有磕碰，顺利进入了木棚。砂、水和匠人的手正在等它。",options:[{label:"把船系回东岸木桩"},{label:"两手托住玉胚上栈台"},{label:"交给等候的制玉匠"}]},
+  workshop:{mode:"sequence",action:"一起制玉",kicker:"制玉 · 04",title:"让玉料慢慢成形",intro:"良渚的玉不是一刀刻成。把三道关键工序按正确次序排好。",success:"切、磨、对钻之后，原本粗糙的玉料终于有了玉琮的轮廓。",options:[{label:"先沿着玉料切出外形"},{label:"用砂和水反复慢磨"},{label:"从两端对着钻通中孔"}]},
+  ritual:{mode:"select",action:"准备祭仪",kicker:"祭仪 · 05",title:"选出要举上高台的器物",intro:"祭司请你从供案上的物件中选出这场祭仪的核心：能把人、神与城连接起来的玉器。",success:"玉琮被安放在供案中央，火光映出它四面的纹样。",options:[{label:"玉琮：方外圆内的礼器",correct:true},{label:"破裂的石锤",correct:false},{label:"沾泥的捕鱼网坠",correct:false}]},
+  tomb:{mode:"sequence",action:"协助入葬",kicker:"王陵 · 06",title:"郑重安放玉琮",intro:"反山王陵里没有匆忙。跟着守陵人的手势，完成最后的安放。",success:"木板合上前，玉琮已安静躺好；它把整座城的记忆留在了土丘之下。",options:[{label:"把玉琮放进预留的位置"},{label:"覆上保护玉器的软垫"},{label:"立起白幡，送别队伍"}]},
+  flood:{mode:"sequence",action:"登堤听水",kicker:"堤坝 · 07",title:"把城留在记忆里",intro:"站在东堤上，阿玉最后要做的不是阻止洪水，而是认清一座城如何被时间留下。",success:"你看见堤坝、水线与远去的屋舍。玉琮王的来时路，至此完整。",options:[{label:"站上堤坝，辨认城内外的水线"},{label:"回望玉矿、河网、工坊和高台"},{label:"把这座城的故事记进玉琮王的记忆"}]}
 };
